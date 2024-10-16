@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\YourShopController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -14,9 +14,9 @@ Route::get('/', function () {
     ]);
 })->name('mainPage');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/yourshop', function () {
+    return Inertia::render('YourShop');
+})->middleware(['auth', 'verified'])->name('yourshop');
 
 Route::get('/create', function () {
     return Inertia::render('Create');
@@ -28,4 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/yourshop', [YourShopController::class, 'index'])->name('yourshop');
+
 require __DIR__.'/auth.php';
+
+
+
