@@ -1,6 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import { reactive, ref } from 'vue';
+
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'; 
+
+import Carousel from '@/Components/Carousel.vue';
+
 </script>
 
 <template>
@@ -8,15 +15,14 @@ import { Head } from '@inertiajs/vue3';
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Stwórz swoj własny produkt</h2>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Stwórz swój własny produkt</h2>
         </template>
-
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">You're logged in!</div>
-                </div>
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 lg:h-[720px] lg:w-[1280px]">
+                <Carousel>
+                </Carousel>
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
+

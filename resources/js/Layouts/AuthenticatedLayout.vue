@@ -21,13 +21,10 @@ const showingNavigationDropdown = ref(false);
                     <div class="flex justify-between h-16">
                         <div class="flex">
                             <!-- Logo -->
-                            <div class="shrink-0 flex items-center">
-                                <NavImage :href="route('mainPage')" :active="route().current('mainPage')">
+                            <div class="shrink-0 flex items-center">      
                                     <ApplicationLogo
                                         class="block h-9 w-auto fill-current"
                                     />
-                                    <span class="ml-1">Strona główna</span>
-                                </NavImage>
                             </div>
 
                             <!-- Navigation Links -->
