@@ -1,107 +1,65 @@
-<script setup>
-import { ref, onMounted, watch } from 'vue';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
-
-const canvasRef = ref(null);
-
-onMounted(() => {
-  const canvas = canvasRef.value;
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-
-  // Create a Three.js scene
-  const scene = new THREE.Scene();
-
-  // Create a perspective camera
-  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
-  camera.position.set(0, 0, 50);
-
-  // Create a WebGL renderer and set its size
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-  renderer.setSize(width, height);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setClearColor(0x000000, 0);
-
-  // Add Orbit Controls
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-
-  // Add Ambient Light
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-  scene.add(ambientLight);
-
-//   const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-//     directionalLight.position.set(10, 10, 10);
-//     scene.add(directionalLight);
-    // scene.background = new THREE.Color(0x808080);
-  // Load HDR environment map
-  const rgbeLoader = new RGBELoader();
-  rgbeLoader.load(
-    'https://3d-cloth.tarunthummar.com/wp-content/uploads/2024/07/symmetrical_garden_02_2k.hdr',
-    (texture) => {
-      texture.mapping = THREE.EquirectangularReflectionMapping;
-      scene.environment = texture;
-    }
-  );
-
-  // Raycaster and mouse setup
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-
-  let otherMeshes = [];
-  let activeLogo = null;
-  let isDragging = false;
-  let isScaling = false;
-  let isRotating = false;
-
-  // Load the GLB model
-  const selectedModel = ref('mug');
-  
-  const loader = new GLTFLoader();
-  loader.load(
-    `/storage/models/${selectedModel.value}/scene.glb`,
-    (gltf) => {
- 
-      const model = gltf.scene;
-      const box = new THREE.Box3().setFromObject(model);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      model.position.sub(center); // Center the model first
-      model.scale.set(150, 150, 150);
-      scene.add(model);
-
-      const frontMesh = model.getObjectByName('front');
-    
-      if (frontMesh) {
+"use strict";
+var canvas = document.getElementById('reversible_side_1');
+var width = canvas.clientWidth;
+var height = canvas.clientHeight;
+// Create a Three.js scene
+var scene = new THREE.Scene();
+// Create a perspective camera
+var camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+camera.position.set(0, 0, 50); // Position the camera
+// Create a WebGL renderer and set its size
+var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+renderer.setSize(width, height);
+renderer.setPixelRatio(window.devicePixelRatio); // Increase pixel ratio for better clarity
+renderer.setClearColor(0x000000, 0); // Make background transparent
+// Add Orbit Controls
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+// Add Ambient Light for overall lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Soft white light
+scene.add(ambientLight);
+// Add HDR environment map
+const rgbeLoader = new THREE.RGBELoader();
+rgbeLoader.load('https://3d-cloth.tarunthummar.com/wp-content/uploads/2024/07/symmetrical_garden_02_2k.hdr', function (texture) {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = texture;
+    // scene.background = texture;
+});
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+let otherMeshes = [];
+let rotationStartY;
+let rotationStartX;
+// Load the GLB model
+const loader = new THREE.GLTFLoader();
+loader.load('https://3d-cloth.tarunthummar.com/wp-content/uploads/2024/08/codepen-model-1.glb', function (gltf) {
+    const model = gltf.scene;
+    scene.add(model);
+    // Find the front mesh
+    const frontMesh = model.getObjectByName('front');
+    if (frontMesh) {
         const frontMeshClone = frontMesh.clone();
-        frontMeshClone.name = 'front_clone';
-        frontMeshClone.position.copy(frontMesh.position);
-        frontMeshClone.rotation.copy(frontMesh.rotation);
-        frontMeshClone.scale.copy(frontMesh.scale);
+        frontMeshClone.name = 'front_clone'; // Set the name of the cloned mesh
+        frontMeshClone.position.copy(frontMesh.position); // Position the clone at the same location
+        frontMeshClone.rotation.copy(frontMesh.rotation); // Match the rotation
+        frontMeshClone.scale.copy(frontMesh.scale); // Match the scale
+        // Add the clone to the scene
         scene.add(frontMeshClone);
-        
-        model.traverse((child) => {
-          if (child.isMesh) otherMeshes.push(child);
+        model.traverse(function (child) {
+            if (child.isMesh) {
+                otherMeshes.push(child);
+            }
         });
         otherMeshes.push(frontMeshClone);
-
-        handleTexture(frontMesh, otherMeshes);
-      }
-
-      camera.position.z = 70;
-      animate();
-    },
-    undefined,
-    (error) => {
-      console.error(error);
+        handleTexture(frontMesh, otherMeshes); // mesh you want to apply logo
     }
-  );
-
-  // Handle texture logic
-  function handleTexture(frontMesh, mesh) {
+    // Position the camera
+    camera.position.z = 70;
+    animate();
+}, undefined, function (error) {
+    console.error(error);
+});
+function handleTexture(frontMesh, mesh) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     const combinedTexture = new THREE.CanvasTexture(canvas);
@@ -115,8 +73,6 @@ onMounted(() => {
     let scalingStartSize = 0;
     let scalingStartX = 0;
     let scalingStartY = 0;
-    let rotationStartX = 0;
-    let rotationStartY = 0;
     // Check if faceVertexUvs is available and has data
     if (frontMesh.geometry.faceVertexUvs && frontMesh.geometry.faceVertexUvs[0]) {
         const uvsArray = frontMesh.geometry.faceVertexUvs[0];
@@ -211,8 +167,7 @@ onMounted(() => {
                         const logoHeight = logoWidth * aspectRatio; // Adjust height proportionally
                         logos.push({
                             texture: logoTexture,
-                            position:{x: 50, y:80},
-                            // position: { x: canvas.width / 2 - logoWidth / 2, y: canvas.height / 2 - logoHeight / 2 },
+                            position: { x: canvas.width / 2 - logoWidth / 2, y: canvas.height / 2 - logoHeight / 2 },
                             size: { width: logoWidth, height: logoHeight },
                             rotation: 3.164 // Initial rotation
                         });
@@ -494,39 +449,17 @@ onMounted(() => {
     renderer.domElement.addEventListener('mousedown', onMouseDown);
     renderer.domElement.addEventListener('mouseup', onMouseUp);
 }
-
-  // Animation loop
-  function animate() {
+// Animation loop
+function animate() {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
-  }
-
-  // Handle window resizing
-  const handleResize = () => {
+}
+// Handle window resizing
+window.addEventListener('resize', () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
     renderer.setSize(width, height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-  };
-
-  window.addEventListener('resize', handleResize);
 });
-</script>
-
-<template>
-    <div> 
-        <input type="file" id="logo_selection" placeholder="please select logo">
-        <canvas ref="canvasRef" id="reversible_side_1"></canvas>
-    </div>
- 
-</template>
-
-<style>
-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-</style>
