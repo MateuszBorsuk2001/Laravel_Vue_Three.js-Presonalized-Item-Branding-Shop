@@ -6,6 +6,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 
 const canvasRef = ref(null);
+const props = defineProps({
+  model: {
+    type: String,
+    default: '',
+  },
+});
 
 onMounted(() => {
   const canvas = canvasRef.value;
@@ -58,11 +64,10 @@ onMounted(() => {
   let isRotating = false;
 
   // Load the GLB model
-  const selectedModel = ref('mug');
   
   const loader = new GLTFLoader();
   loader.load(
-    `/storage/models/${selectedModel.value}/scene.glb`,
+    `/storage/models/${props.model}/scene.glb`,
     (gltf) => {
  
       const model = gltf.scene;
@@ -70,7 +75,7 @@ onMounted(() => {
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       model.position.sub(center); // Center the model first
-      model.scale.set(150, 150, 150);
+      if(props.model = "mug"){ model.scale.set(150, 150, 150);}
       scene.add(model);
 
       const frontMesh = model.getObjectByName('front');
@@ -209,13 +214,22 @@ onMounted(() => {
                         const logoWidth = 100; // Set the logo width to 100px
                         const aspectRatio = logoTexture.image.height / logoTexture.image.width;
                         const logoHeight = logoWidth * aspectRatio; // Adjust height proportionally
-                        logos.push({
+                        if(props.model = "mug") {
+                            logos.push({
                             texture: logoTexture,
                             position:{x: 50, y:80},
                             // position: { x: canvas.width / 2 - logoWidth / 2, y: canvas.height / 2 - logoHeight / 2 },
                             size: { width: logoWidth, height: logoHeight },
                             rotation: 3.164 // Initial rotation
                         });
+                        } else if(props.model = "tshirt"){
+                            logos.push({
+                            texture: logoTexture,
+                            position: { x: canvas.width / 2 - logoWidth / 2, y: canvas.height / 2 - logoHeight / 2 },
+                            size: { width: logoWidth, height: logoHeight },
+                            rotation: 3.164 // Initial rotation
+                        });
+                        }
                         drawCanvas();
                     });
                 };

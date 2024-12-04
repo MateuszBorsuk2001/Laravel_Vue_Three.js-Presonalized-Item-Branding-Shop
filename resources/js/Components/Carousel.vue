@@ -6,12 +6,12 @@
                 class="carousel-inner" 
             >
             <div v-if="carousel.currentIndex === 0" class="carousel-item p-8 text-center ">
-                <Slide1 />
+                <Slide1 @update-model="asignModel" />
               </div>
-
+              {{ console.log(selectedModel) }}
               <!-- Slide 2 - 3D model customization -->
               <div v-if="carousel.currentIndex === 1" class="carousel-item p-8 text-center">
-                <Slide2 />
+                <Slide2 :model="selectedModel" />
               </div>
    
               <!-- Slide 3 - Payment -->
@@ -57,11 +57,15 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive , ref} from 'vue';
 import Slide1 from '@/Components/Slide1.vue';
 import Slide2 from '@/Components/Slide2.vue';
 import Slide3 from '@/Components/Slide3.vue';
 
+let selectedModel = ref('');
+function asignModel(model) {
+    selectedModel = model;
+};
 // Carousel state
 const carousel = reactive({
     slides: [
