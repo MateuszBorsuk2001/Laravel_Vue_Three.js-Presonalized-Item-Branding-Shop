@@ -6,14 +6,12 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+
 Route::get('/', function () {
-    return redirect('/yourShop');
-    // return Inertia::render('login', [
-    //     'canLogin' => Route::has('login'),
-    //     'canRegister' => Route::has('register'),
-    //     'laravelVersion' => Application::VERSION,
-    //     'phpVersion' => PHP_VERSION,
-    // ]);
+    if (Auth::check()) {
+        return Inertia::render('YourShop');
+    }
+    return redirect('/login'); 
 })->name('mainPage');
 
 Route::get('/yourshop', function () {
