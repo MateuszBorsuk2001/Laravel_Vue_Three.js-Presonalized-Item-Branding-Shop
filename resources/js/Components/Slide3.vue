@@ -6,7 +6,10 @@
 </template>
 
 <script setup>
+import { onMounted, reactive, } from 'vue';
+
 const proceedToPayment = () => {
     alert('Przejdź do płatności');
 };
+
 </script>

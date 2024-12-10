@@ -1,12 +1,13 @@
 <?php
 use App\Http\Controllers\YourShopController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ItemController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return redirect('/login');
+    return redirect('/yourShop');
     // return Inertia::render('login', [
     //     'canLogin' => Route::has('login'),
     //     'canRegister' => Route::has('register'),
@@ -27,6 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/items', [ItemController::class, 'store']);
+    Route::get('/items', [ItemController::class, 'index']);
+    Route::get('/items/{id}', [ItemController::class, 'show']);
 });
 
 Route::get('/yourshop', [YourShopController::class, 'index'])->name('yourshop');

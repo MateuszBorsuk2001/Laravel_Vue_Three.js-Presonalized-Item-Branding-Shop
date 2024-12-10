@@ -8,10 +8,9 @@
             <div v-if="carousel.currentIndex === 0" class="carousel-item p-8 text-center ">
                 <Slide1 @update-model="asignModel" />
               </div>
-              {{ console.log(selectedModel) }}
               <!-- Slide 2 - 3D model customization -->
               <div v-if="carousel.currentIndex === 1" class="carousel-item p-8 text-center">
-                <Slide2 :model="selectedModel" />
+                <Slide2 :model="selectedModel" @saveModel="handleSaveModel" />
               </div>
    
               <!-- Slide 3 - Payment -->
@@ -57,12 +56,51 @@
 </template>
 
 <script setup>
-import { reactive , ref} from 'vue';
+import { reactive, ref, computed } from 'vue';
 import Slide1 from '@/Components/Slide1.vue';
 import Slide2 from '@/Components/Slide2.vue';
 import Slide3 from '@/Components/Slide3.vue';
+import axios from 'axios';
 
 let selectedModel = ref('');
+
+let savedModel = ref('');
+const handleSaveModel = async (modelData) => {
+    try {
+        const token = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('XSRF-TOKEN='))
+            ?.split('=')[1];
+        // Convert logos data to a storable format
+        const processedData = {
+            name: modelData.name,
+            model: modelData.model,
+            logos: modelData.logos.map(logo => ({
+                texture: logo.texture,
+                position: logo.position,
+                size: logo.size,
+                rotation: logo.rotation
+            }))
+        };
+
+        // Make API call to store data
+        const response = await axios.post('/api/items', processedData, {
+            headers: {
+                'X-CSRF-TOKEN': decodeURIComponent(token),
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        console.log('Model saved successfully:', response.data);
+        
+        // Store the ID for later use
+        savedModel.value = response.data;
+        
+    } catch (error) {
+        console.error('Error saving model:', error);
+        alert('Error saving model configuration');
+    }
+};  
 function asignModel(model) {
     selectedModel = model;
 };
@@ -78,6 +116,10 @@ const carousel = reactive({
 
 // Carousel navigation functions
 const nextSlide = () => {
+    if (carousel.currentIndex === 0 && selectedModel.value === '') {
+        alert('Proszę wybrać model przed przejściem dalej.'); // Prevent navigation
+        return;
+    }
     if (carousel.currentIndex < carousel.slides.length - 1) {
         carousel.currentIndex++;
     }

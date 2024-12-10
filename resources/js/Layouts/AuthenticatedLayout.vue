@@ -11,10 +11,10 @@ import { Link } from '@inertiajs/vue3';
 const showingNavigationDropdown = ref(false);
 </script>
 
-<template>
+<template >
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     <div>
-        <div class="min-h-screen bg-gray-100">
+        <div class="min-h-screen bg-c">
             <nav class="bg-white border-b border-gray-100">
                 <!-- Primary Navigation Menu -->
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -155,3 +155,8 @@ const showingNavigationDropdown = ref(false);
         </div>
     </div>
 </template>
+<style scoped>
+.bg-c{
+    background-color: rgb(238, 238, 238);
+}
+</style>

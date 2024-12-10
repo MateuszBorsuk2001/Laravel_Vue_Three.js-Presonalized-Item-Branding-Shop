@@ -1,10 +1,12 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, reactive, } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import axios from 'axios';
 
+const emit = defineEmits(['saveModel']);
 const canvasRef = ref(null);
 const props = defineProps({
   model: {
@@ -12,7 +14,14 @@ const props = defineProps({
     default: '',
   },
 });
-
+const emitSaveState = () => {
+    emit('saveModel', modelData);
+};
+const modelData = reactive ({
+    name: `${props.model}`, // Name of the design/model
+    url:  `/storage/models/${props.model}/scene.glb`, // This can be your model data, like a base64-encoded string or a URL to a .glb or .obj file
+    logos: [], // Logos or textures attached to the model, which could be either URL or base64
+});
 onMounted(() => {
   const canvas = canvasRef.value;
   const width = canvas.clientWidth;
@@ -39,10 +48,6 @@ onMounted(() => {
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
   scene.add(ambientLight);
 
-//   const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-//     directionalLight.position.set(10, 10, 10);
-//     scene.add(directionalLight);
-    // scene.background = new THREE.Color(0x808080);
   // Load HDR environment map
   const rgbeLoader = new RGBELoader();
   rgbeLoader.load(
@@ -56,7 +61,7 @@ onMounted(() => {
   // Raycaster and mouse setup
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
-
+  
   let otherMeshes = [];
   let activeLogo = null;
   let isDragging = false;
@@ -214,22 +219,25 @@ onMounted(() => {
                         const logoWidth = 100; // Set the logo width to 100px
                         const aspectRatio = logoTexture.image.height / logoTexture.image.width;
                         const logoHeight = logoWidth * aspectRatio; // Adjust height proportionally
-                        if(props.model = "mug") {
-                            logos.push({
+                        let newLogo = {
                             texture: logoTexture,
-                            position:{x: 50, y:80},
-                            // position: { x: canvas.width / 2 - logoWidth / 2, y: canvas.height / 2 - logoHeight / 2 },
+                            position:{x: 0, y: 0},
                             size: { width: logoWidth, height: logoHeight },
-                            rotation: 3.164 // Initial rotation
-                        });
-                        } else if(props.model = "tshirt"){
-                            logos.push({
-                            texture: logoTexture,
-                            position: { x: canvas.width / 2 - logoWidth / 2, y: canvas.height / 2 - logoHeight / 2 },
-                            size: { width: logoWidth, height: logoHeight },
-                            rotation: 3.164 // Initial rotation
-                        });
+                            rotation: 3.164 
                         }
+                        if(props.model === "mug"){
+                            newLogo.position = {x: 50, y:80}
+                        }else if(props.model === "tshirt"){
+                            newLogo.position = {x: 500, y:500}
+                        };
+                        modelData.logos.push({
+                        texture: img_url, // Store the texture reference or URL
+                        position: newLogo.position,
+                        size: newLogo.size,
+                        rotation: newLogo.rotation
+                        });
+                        emitSaveState();
+                        logos.push(newLogo);
                         drawCanvas();
                     });
                 };
@@ -237,6 +245,24 @@ onMounted(() => {
             }
         });
     }
+    const loadSavedModel = async (itemId) => {
+    try {
+        const response = await axios.get(`/api/items/${itemId}`);
+        const savedData = response.data;
+        
+        // Reconstruct the model data
+        modelData.name = savedData.name;
+        modelData.model = savedData.model;
+        modelData.logos = savedData.logos;
+        
+        // Redraw the canvas with saved logos
+        logos = savedData.logos;
+        drawCanvas();
+        
+    } catch (error) {
+        console.error('Error loading saved model:', error);
+    }
+};
     // Function to handle mouse move events
     function onMouseMove(event) {
         if (isScaling && activeLogo) {
@@ -492,13 +518,27 @@ onMounted(() => {
             const index = logos.indexOf(activeLogo);
             if (index > -1) {
                 logos.splice(index, 1);
+                modelData.logos.splice(index, 1);
                 activeLogo = null;
+                emitSaveState();
                 drawCanvas();
             }
         }
     }
     // Function to handle mouse up events
     function onMouseUp(event) {
+        if (activeLogo) {
+        const index = logos.indexOf(activeLogo);
+        if (index > -1) {
+            modelData.logos[index] = {
+                texture: activeLogo.texture.image.src,
+                position: activeLogo.position,
+                size: activeLogo.size,
+                rotation: activeLogo.rotation
+            };
+            emitSaveState(); // Add emit here
+        }
+    }
         isDragging = false;
         isScaling = false; // Stop scaling when mouse is released
         isRotating = false; // Stop scaling when mouse is released
@@ -526,7 +566,27 @@ onMounted(() => {
   };
 
   window.addEventListener('resize', handleResize);
+  
+
+
+function saveLogos(data) {
+    console.log(data)
+    axios.post('/api/items', data, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Include the auth token (if using API authentication)
+        }
+    })
+    .then(response => {
+        console.log('Model data saved successfully:', response.data);
+    })
+    .catch(error => {
+        console.error('Error saving model data:', error);
+    });
+}
 });
+
+
 </script>
 
 <template>
