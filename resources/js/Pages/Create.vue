@@ -1,17 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { reactive, ref } from 'vue';
-
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'; 
-
 import Carousel from '@/Components/Carousel.vue';
 
 </script>
 
 <template>
-    <Head title="YourShop" />
+    <Head title="Create" />>
 
     <AuthenticatedLayout>
         <template #header>

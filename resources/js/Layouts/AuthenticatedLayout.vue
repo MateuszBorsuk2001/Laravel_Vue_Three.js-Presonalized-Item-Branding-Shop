@@ -12,6 +12,7 @@ const showingNavigationDropdown = ref(false);
 </script>
 
 <template >
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     <div>
         <div class="min-h-screen bg-c">

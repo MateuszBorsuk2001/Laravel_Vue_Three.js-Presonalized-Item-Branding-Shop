@@ -156,7 +156,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => env('SESSION_DOMAIN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -169,7 +169,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -181,7 +181,7 @@ return [
     | the HTTP protocol. It's unlikely you should disable this option.
     |
     */
-
+ 
     'http_only' => env('SESSION_HTTP_ONLY', true),
 
     /*
@@ -199,7 +199,7 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'lax'),
+    'same_site' => "lax",
 
     /*
     |--------------------------------------------------------------------------

@@ -6,16 +6,16 @@
                 class="carousel-inner" 
             >
             <div v-if="carousel.currentIndex === 0" class="carousel-item p-8 text-center ">
-                <Slide1 @update-model="asignModel" />
+                <Slide1 @update-model="asignModel" @generated-image="asignImage" />
               </div>
               <!-- Slide 2 - 3D model customization -->
               <div v-if="carousel.currentIndex === 1" class="carousel-item p-8 text-center">
-                <Slide2 :model="selectedModel" @saveModel="handleSaveModel" />
+                <Slide2 :model="selectedModel" :generatedImage="generatedImage" @saveModel="handleSaveModel" @modelScreenshot="handleScreenshot" />
               </div>
    
               <!-- Slide 3 - Payment -->
               <div v-if="carousel.currentIndex === 2" class="carousel-item p-8 text-center">
-                <Slide3 />
+                <Slide3 :modelScreenshot="modelScreenshot" />
       
               </div>
             </div>
@@ -48,13 +48,28 @@
                         'bg-gray-800': index === carousel.currentIndex,
                         'bg-gray-400': index !== carousel.currentIndex
                     }"
-                    @click="carousel.currentIndex = index"
                 ></span>
+            </div>
+        </div>
+        <div v-if="showWarningModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-sm mx-4">
+                <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">Wybierz model</h3>
+                    <p class="mt-2 text-sm text-gray-500">Proszę wybrać model 3D z listy przed przejściem dalej.</p>
+                    <button 
+                        @click="showWarningModal = false"
+                        class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none"
+                    >
+                        Rozumiem
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </template>
-
 <script setup>
 import { reactive, ref, computed } from 'vue';
 import Slide1 from '@/Components/Slide1.vue';
@@ -62,19 +77,49 @@ import Slide2 from '@/Components/Slide2.vue';
 import Slide3 from '@/Components/Slide3.vue';
 import axios from 'axios';
 
-let selectedModel = ref('');
-
+const selectedModel = ref('');
+let generatedImage = ref('');
 let savedModel = ref('');
+let modelScreenshot = ref('');
+const showWarningModal = ref(false);
+const handleScreenshot = (screenshot) => {
+    modelScreenshot.value = screenshot;
+}
+
+const checkAuth = async () => {
+    try {
+        // Get CSRF token and establish session
+        await axios.get('/sanctum/csrf-cookie');
+        
+        // Add session cookie to subsequent requests
+        const authStatus = await axios.get('/api/auth-status', {
+            withCredentials: true,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Referer': window.location.origin
+            }
+        });
+        console.log('Auth status:', authStatus.data);
+        
+    } catch (error) {
+        console.log('Error details:', error.response?.data);
+    }
+};
+
+
 const handleSaveModel = async (modelData) => {
     try {
+        await axios.get('/sanctum/csrf-cookie');
+        await checkAuth();
         const token = document.cookie
             .split('; ')
             .find(row => row.startsWith('XSRF-TOKEN='))
             ?.split('=')[1];
-        // Convert logos data to a storable format
+
         const processedData = {
-            name: modelData.name,
-            model: modelData.model,
+            name: `${selectedModel.value}-${Date.now()}`,
+            model: selectedModel.value,
             logos: modelData.logos.map(logo => ({
                 texture: logo.texture,
                 position: logo.position,
@@ -83,41 +128,43 @@ const handleSaveModel = async (modelData) => {
             }))
         };
 
-        // Make API call to store data
-        const response = await axios.post('/api/items', processedData, {
+        const response = await axios.post('http://localhost:8000/api/items', processedData, {
             headers: {
-                'X-CSRF-TOKEN': decodeURIComponent(token),
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
-            }
+            },
+            withCredentials: true  // Required for Sanctum
         });
-        console.log('Model saved successfully:', response.data);
         
-        // Store the ID for later use
+        console.log('Model saved successfully:', response.data);
         savedModel.value = response.data;
         
     } catch (error) {
         console.error('Error saving model:', error);
-        alert('Error saving model configuration');
     }
-};  
+};
+
 function asignModel(model) {
-    selectedModel = model;
+    selectedModel.value = model;
+};
+
+function asignImage(image) {
+    generatedImage = image;
 };
 // Carousel state
 const carousel = reactive({
     slides: [
         { id: 1, header: 'Slide 1 - Prześlij grafikę i wybierz model 3D'},
         { id: 2, header: 'Slide 2 - Ustaw grafikę na modelu 3D'},
-        { id: 4, header: 'Slide 4 - Płatność'}
+        { id: 3, header: 'Slide 3 - Płatność'}
     ],
     currentIndex: 0
 });
 
 // Carousel navigation functions
 const nextSlide = () => {
-    if (carousel.currentIndex === 0 && selectedModel.value === '') {
-        alert('Proszę wybrać model przed przejściem dalej.'); // Prevent navigation
+    if (carousel.currentIndex === 0 && !selectedModel.value) {
+        showWarningModal.value = true;
         return;
     }
     if (carousel.currentIndex < carousel.slides.length - 1) {
@@ -131,7 +178,6 @@ const prevSlide = () => {
     }
 };
 </script>
-
 <style scoped>
 .btn1:hover {
       transform: rotate(180deg) scale(1.2); 

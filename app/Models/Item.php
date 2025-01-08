@@ -10,7 +10,16 @@ class Item extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'model', 'logos', 'user_id'];
+    protected $fillable = [
+        'name',
+        'model',
+        'logos',
+        'user_id'
+    ];
+
+    protected $casts = [
+        'logos' => 'array'
+    ];
 
     public function user()
     {

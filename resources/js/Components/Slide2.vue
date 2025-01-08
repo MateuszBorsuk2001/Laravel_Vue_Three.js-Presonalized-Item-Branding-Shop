@@ -6,10 +6,14 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import axios from 'axios';
 
-const emit = defineEmits(['saveModel']);
+const emit = defineEmits(['saveModel','modelScreenshot']);
 const canvasRef = ref(null);
 const props = defineProps({
   model: {
+    type: String,
+    default: '',
+  },
+  generatedImage: {
     type: String,
     default: '',
   },
@@ -81,6 +85,7 @@ onMounted(() => {
       const size = box.getSize(new THREE.Vector3());
       model.position.sub(center); // Center the model first
       if(props.model = "mug"){ model.scale.set(150, 150, 150);}
+      if(props.model = "cap"){ model.scale.set(150, 150, 150);}
       scene.add(model);
 
       const frontMesh = model.getObjectByName('front');
@@ -109,6 +114,12 @@ onMounted(() => {
       console.error(error);
     }
   );
+
+  function captureScreenshot() {
+    renderer.render(scene, camera);
+    const screenshot = renderer.domElement.toDataURL('image/png');
+    emit('modelScreenshot', screenshot);
+}
 
   // Handle texture logic
   function handleTexture(frontMesh, mesh) {
@@ -204,6 +215,7 @@ onMounted(() => {
             context.restore();
         }
         combinedTexture.needsUpdate = true;
+        captureScreenshot();
     }
     drawCanvas();
     if (frontMesh.name == 'front') {
@@ -223,10 +235,11 @@ onMounted(() => {
                             texture: logoTexture,
                             position:{x: 0, y: 0},
                             size: { width: logoWidth, height: logoHeight },
-                            rotation: 3.164 
+                            rotation: 3.164
                         }
                         if(props.model === "mug"){
                             newLogo.position = {x: 50, y:80}
+                            newLogo.rotation = 0;
                         }else if(props.model === "tshirt"){
                             newLogo.position = {x: 500, y:500}
                         };
@@ -239,11 +252,49 @@ onMounted(() => {
                         emitSaveState();
                         logos.push(newLogo);
                         drawCanvas();
+                        captureScreenshot();
                     });
                 };
                 reader.readAsDataURL(file);
             }
         });
+        if (props.generatedImage) {
+            // Use the base64 image directly for loading into texture
+            const logoTexture = new THREE.TextureLoader().load(props.generatedImage, function () {
+                logoTexture.wrapS = THREE.RepeatWrapping;
+                logoTexture.wrapT = THREE.RepeatWrapping;
+
+                const logoWidth = 100; // Set the logo width to 100px
+                const aspectRatio = logoTexture.image.height / logoTexture.image.width;
+                const logoHeight = logoWidth * aspectRatio; // Adjust height proportionally
+
+                let newLogo = {
+                    texture: logoTexture,
+                    position: { x: 0, y: 0 },
+                    size: { width: logoWidth, height: logoHeight },
+                    rotation: 3.164
+                };
+
+                if (props.model === "mug") {
+                    newLogo.position = { x: 50, y: 80 };
+                    newLogo.rotation = 0;
+                } else if (props.model === "tshirt") {
+                    newLogo.position = { x: 500, y: 500 };
+                }
+
+                modelData.logos.push({
+                    texture: props.generatedImage, // Store the texture reference or URL
+                    position: newLogo.position,
+                    size: newLogo.size,
+                    rotation: newLogo.rotation
+                });
+
+                emitSaveState();
+                logos.push(newLogo);
+                drawCanvas();
+                captureScreenshot();
+            });
+        }
     }
     const loadSavedModel = async (itemId) => {
     try {
@@ -521,6 +572,7 @@ onMounted(() => {
                 modelData.logos.splice(index, 1);
                 activeLogo = null;
                 emitSaveState();
+                captureScreenshot();
                 drawCanvas();
             }
         }
