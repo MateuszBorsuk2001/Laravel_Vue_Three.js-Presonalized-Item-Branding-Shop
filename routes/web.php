@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     if (Auth::check()) {
-        return Inertia::render('YourShop');
+        return redirect('/yourshop');
     }
     return redirect('/login'); 
 })->name('mainPage');
@@ -35,22 +35,6 @@ Route::middleware(['auth', 'verified','web'])->group(function () {
             'authenticated' => Auth::check(),
             'user' => Auth::user(),
             'session_id' => session()->getId()
-        ]);
-    });
-    Route::get('/debug-login', function () {
-        dd(session()->getSessionConfig());
-        $user = auth()->user();
-        return response()->json([
-            'auth_driver' => config('auth.defaults.guard'),
-            'session_driver' => config('session.driver'),
-            'guards' => array_keys(config('auth.guards')),
-            'current_guard' => auth()->getDefaultDriver(),
-            'user_provider' => config('auth.guards.web.provider'),
-            'is_authenticated' => auth()->check(),
-            'user' => $user ? [
-                'id' => $user->id,
-                'email' => $user->email
-            ] : null
         ]);
     });
 });

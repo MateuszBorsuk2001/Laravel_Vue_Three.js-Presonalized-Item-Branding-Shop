@@ -71,12 +71,13 @@
     </div>
 </template>
 <script setup>
-import { reactive, ref, computed } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
 import Slide1 from '@/Components/Slide1.vue';
 import Slide2 from '@/Components/Slide2.vue';
 import Slide3 from '@/Components/Slide3.vue';
 import axios from 'axios';
 
+const modelName = ref('');
 const selectedModel = ref('');
 let generatedImage = ref('');
 let savedModel = ref('');
@@ -85,40 +86,12 @@ const showWarningModal = ref(false);
 const handleScreenshot = (screenshot) => {
     modelScreenshot.value = screenshot;
 }
-
-const checkAuth = async () => {
-    try {
-        // Get CSRF token and establish session
-        await axios.get('/sanctum/csrf-cookie');
-        
-        // Add session cookie to subsequent requests
-        const authStatus = await axios.get('/api/auth-status', {
-            withCredentials: true,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'Referer': window.location.origin
-            }
-        });
-        console.log('Auth status:', authStatus.data);
-        
-    } catch (error) {
-        console.log('Error details:', error.response?.data);
-    }
-};
-
-
 const handleSaveModel = async (modelData) => {
     try {
         await axios.get('/sanctum/csrf-cookie');
-        await checkAuth();
-        const token = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('XSRF-TOKEN='))
-            ?.split('=')[1];
-
+        
         const processedData = {
-            name: `${selectedModel.value}-${Date.now()}`,
+            name: modelName.value,
             model: selectedModel.value,
             logos: modelData.logos.map(logo => ({
                 texture: logo.texture,
@@ -128,12 +101,13 @@ const handleSaveModel = async (modelData) => {
             }))
         };
 
+        // Use POST for both create and update
         const response = await axios.post('http://localhost:8000/api/items', processedData, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            withCredentials: true  // Required for Sanctum
+            withCredentials: true
         });
         
         console.log('Model saved successfully:', response.data);
@@ -146,6 +120,7 @@ const handleSaveModel = async (modelData) => {
 
 function asignModel(model) {
     selectedModel.value = model;
+    modelName.value = `${model}-${Date.now()}`;
 };
 
 function asignImage(image) {
