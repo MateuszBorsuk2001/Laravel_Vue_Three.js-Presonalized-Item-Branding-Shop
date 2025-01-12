@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
+use App\Models\Item;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 
@@ -10,17 +10,23 @@ class YourShopController extends Controller
 {
     public function index()
     {
-        $products = Product::with('image')->get()->map(function($product) {
+        $items = Item::where('user_id', auth()->id())->get()->map(function($item) {
+            $modelTranslations = [
+                'mug' => 'Kubek',
+                'cap' => 'Czapka z daszkiem',
+                'tshirt' => 'T-Shirt'
+            ];
+
             return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'description' => $product->image->description,
-                'image_url' => asset('storage/' .$product->image->url)
+                'id' => $item->id,
+                'model' => $modelTranslations[$item->model] ?? $item->model,
+                'description' => $item->description,
+                'screenshot_path' => asset($item->screenshot_path)
             ];
         });
 
         return Inertia::render('YourShop', [
-            'products' => $products
+            'items' => $items
         ]);
     }
 }

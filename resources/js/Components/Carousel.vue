@@ -86,6 +86,7 @@ let modelScreenshot = ref('');
 const showWarningModal = ref(false);
 const handleScreenshot = async (screenshot) => {
     try {
+        modelScreenshot.value = screenshot;
         await axios.put('/api/screenshots', {
             screenshot: screenshot,
             name: modelName.value
@@ -96,7 +97,6 @@ const handleScreenshot = async (screenshot) => {
             },
             withCredentials: true
         });
-    modelScreenshot.value = screenshot;
     }catch (error) {
         console.error('Error saving screenshot:', error);
     }

@@ -20,7 +20,7 @@
                 type="text"
                 id="description"
                 v-model="description"
-                placeholder="Wpisz opis zdjęcia jakie chesz uzyskać"
+                placeholder="Wpisz opis zdjęcia w języku angielskim"
                 class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
             />
         </div>

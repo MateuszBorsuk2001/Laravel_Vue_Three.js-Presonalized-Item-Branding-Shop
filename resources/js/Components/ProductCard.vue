@@ -1,5 +1,5 @@
 <template>
-    <div class="product-container">
+    <div class="product-container" @click="navigateToEditor">
     <div class="product-card">
       <img :src="image" alt="Product Image" class="product-image" />
       <div class="product-description">
@@ -12,7 +12,8 @@
   
   <script setup>
   import { defineProps } from 'vue';
-  
+  import { router } from '@inertiajs/vue3';
+
   const props = defineProps({
     image: {
       type: String,
@@ -27,6 +28,13 @@
       required: true,
     },
   });
+
+  const navigateToEditor = () => {
+    const params = new URLSearchParams();
+    params.append('screenshot_path', props.image);
+    window.location.href = `/edit?${params.toString()}`;
+};
+ 
   </script>
   
   <style scoped>
@@ -48,6 +56,7 @@
     height: 300px;
     box-sizing: border-box;
     overflow: hidden; 
+    background-color: white;
   }
   
   .product-image {

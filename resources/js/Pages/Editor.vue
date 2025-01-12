@@ -1,30 +1,28 @@
+
 <script setup>
 import { ref, onMounted, watch, reactive, } from 'vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head } from '@inertiajs/vue3';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import { defineProps } from 'vue';
 import axios from 'axios';
 
 const emit = defineEmits(['saveModel','modelScreenshot']);
 const canvasRef = ref(null);
+let savedModel = ref('');
 const props = defineProps({
-  model: {
-    type: String,
-    default: '',
-  },
-  generatedImage: {
-    type: String,
-    default: '',
-  },
+    item: {
+        type: Object,
+        required: true
+    }
 });
-const emitSaveState = () => {
-    emit('saveModel', modelData);
-};
 const modelData = reactive ({
-    name: `${props.model}`, // Name of the design/model
-    url:  `/storage/models/${props.model}/scene.glb`, // This can be your model data, like a base64-encoded string or a URL to a .glb or .obj file
-    logos: [], // Logos or textures attached to the model, which could be either URL or base64
+    name: `${props.item.name}`, // Name of the design/model
+    url:  `/storage/models/${props.item.model}/scene.glb`, // This can be your model data, like a base64-encoded string or a URL to a .glb or .obj file
+    logos: [props.item.logos], // Logos or textures attached to the model, which could be either URL or base64
 });
 onMounted(() => {
   const canvas = canvasRef.value;
@@ -76,7 +74,7 @@ onMounted(() => {
   
   const loader = new GLTFLoader();
   loader.load(
-    `/storage/models/${props.model}/scene.glb`,
+    `/storage/models/${props.item.model}/scene.glb`,
     (gltf) => {
  
       const model = gltf.scene;
@@ -84,8 +82,8 @@ onMounted(() => {
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       model.position.sub(center); // Center the model first
-      if(props.model = "mug"){ model.scale.set(150, 150, 150);}
-      if(props.model = "cap"){ model.scale.set(150, 150, 150);}
+      if(props.item.model = "mug"){ model.scale.set(150, 150, 150);}
+      if(props.item.model = "cap"){ model.scale.set(150, 150, 150);}
       scene.add(model);
 
       const frontMesh = model.getObjectByName('front');
@@ -114,7 +112,25 @@ onMounted(() => {
       console.error(error);
     }
   );
-
+  const saveScreenshot = async (screenshot) => {
+    try {
+        await axios.get('/sanctum/csrf-cookie');
+        const response = await axios.put('/api/screenshots', {
+            name: props.item.name,
+            screenshot: screenshot
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            withCredentials: true
+        });
+        // console.log('Screenshot saved successfully');
+        return response.data;
+    } catch (error) {
+        console.error('Error saving screenshot:', error);
+    }
+};
   function captureScreenshot() {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = 512;
@@ -139,7 +155,7 @@ onMounted(() => {
     tempContext.drawImage(renderer.domElement, x, y, scaledWidth, scaledHeight);
     
     const screenshot = tempCanvas.toDataURL('image/png');
-    emit('modelScreenshot', screenshot);
+    saveScreenshot(screenshot);
 }
 
   // Handle texture logic
@@ -239,6 +255,32 @@ onMounted(() => {
         captureScreenshot();
     }
     drawCanvas();
+// Load existing logos from modelData
+let i = 0;
+const savedLogos = Array.isArray(props.item.logos) ? props.item.logos : JSON.parse(props.item.logos);
+
+if (savedLogos && savedLogos.length > 0 && i === 0) {
+    savedLogos.forEach(logoData => {
+        // Ensure logoData.texture is properly accessed
+        const logoUrl = typeof logoData.texture === 'string' ? logoData.texture.replace(/\\/g, '') : logoData.texture;
+        
+        textureLoader.load(logoUrl, function(logoTexture) {
+            logoTexture.wrapS = THREE.RepeatWrapping;
+            logoTexture.wrapT = THREE.RepeatWrapping;
+            
+            const loadedLogo = {
+                texture: logoTexture,
+                position: logoData.position,
+                size: logoData.size,
+                rotation: logoData.rotation
+            };
+            
+            logos.push(loadedLogo);
+            drawCanvas();
+        });
+    });
+    i++;
+}
     if (frontMesh.name == 'front') {
         document.getElementById('logo_selection').addEventListener('change', function (event) {
             const file = event.target.files[0];
@@ -258,10 +300,10 @@ onMounted(() => {
                             size: { width: logoWidth, height: logoHeight },
                             rotation: 3.164
                         }
-                        if(props.model === "mug"){
+                        if(props.item.model === "mug"){
                             newLogo.position = {x: 50, y:80}
                             newLogo.rotation = 0;
-                        }else if(props.model === "tshirt"){
+                        }else if(props.item.model === "tshirt"){
                             newLogo.position = {x: 500, y:500}
                         };
                         modelData.logos.push({
@@ -270,7 +312,7 @@ onMounted(() => {
                         size: newLogo.size,
                         rotation: newLogo.rotation
                         });
-                        emitSaveState();
+                        saveModel(modelData);
                         logos.push(newLogo);
                         drawCanvas();
                         captureScreenshot();
@@ -279,62 +321,7 @@ onMounted(() => {
                 reader.readAsDataURL(file);
             }
         });
-        if (props.generatedImage) {
-            // Use the base64 image directly for loading into texture
-            const logoTexture = new THREE.TextureLoader().load(props.generatedImage, function () {
-                logoTexture.wrapS = THREE.RepeatWrapping;
-                logoTexture.wrapT = THREE.RepeatWrapping;
-
-                const logoWidth = 100; // Set the logo width to 100px
-                const aspectRatio = logoTexture.image.height / logoTexture.image.width;
-                const logoHeight = logoWidth * aspectRatio; // Adjust height proportionally
-
-                let newLogo = {
-                    texture: logoTexture,
-                    position: { x: 0, y: 0 },
-                    size: { width: logoWidth, height: logoHeight },
-                    rotation: 3.164
-                };
-
-                if (props.model === "mug") {
-                    newLogo.position = { x: 50, y: 80 };
-                    newLogo.rotation = 0;
-                } else if (props.model === "tshirt") {
-                    newLogo.position = { x: 500, y: 500 };
-                }
-
-                modelData.logos.push({
-                    texture: props.generatedImage, // Store the texture reference or URL
-                    position: newLogo.position,
-                    size: newLogo.size,
-                    rotation: newLogo.rotation
-                });
-
-                emitSaveState();
-                logos.push(newLogo);
-                drawCanvas();
-                captureScreenshot();
-            });
-        }
     }
-    const loadSavedModel = async (itemId) => {
-    try {
-        const response = await axios.get(`/api/items/${itemId}`);
-        const savedData = response.data;
-        
-        // Reconstruct the model data
-        modelData.name = savedData.name;
-        modelData.model = savedData.model;
-        modelData.logos = savedData.logos;
-        
-        // Redraw the canvas with saved logos
-        logos = savedData.logos;
-        drawCanvas();
-        
-    } catch (error) {
-        console.error('Error loading saved model:', error);
-    }
-};
     // Function to handle mouse move events
     function onMouseMove(event) {
         if (isScaling && activeLogo) {
@@ -592,7 +579,7 @@ onMounted(() => {
                 logos.splice(index, 1);
                 modelData.logos.splice(index, 1);
                 activeLogo = null;
-                emitSaveState();
+                saveModel(modelData);
                 captureScreenshot();
                 drawCanvas();
             }
@@ -609,7 +596,7 @@ onMounted(() => {
                 size: activeLogo.size,
                 rotation: activeLogo.rotation
             };
-            emitSaveState(); // Add emit here
+            saveModel(modelData); // Add emit here
         }
     }
         isDragging = false;
@@ -642,21 +629,54 @@ onMounted(() => {
   
 });
 
+const saveModel = async (modelData) => {
+    try {
+        await axios.get('/sanctum/csrf-cookie');
+        const processedData = {
+            name: props.item.name,
+            model: props.item.model,
+            logos: modelData.logos,
+            description: props.item.description
+        };
 
+        // Use PUT method for updating existing item
+        const response = await axios.post('/api/items', processedData, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            withCredentials: true
+        });
+
+        // console.log('Model updated successfully');
+        savedModel.value = response.data;
+        
+    } catch (error) {
+        console.error('Error updating model:', error);
+    }
+};
 </script>
 
 <template>
-    <div> 
-        <input type="file" id="logo_selection" placeholder="please select logo">
-        <canvas ref="canvasRef" id="reversible_side_1"></canvas>
-    </div>
- 
+    <Head title="Editor" />
+    <AuthenticatedLayout>
+        <div class="carousel-item p-8 text-center">
+            <input type="file" id="logo_selection" placeholder="please select logo">
+            <canvas ref="canvasRef" id="reversible_side_1"></canvas>
+        </div>
+    </AuthenticatedLayout>
 </template>
+
+
 
 <style scoped>
 canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 720px;
+}
+
+.carousel-item {
+    flex: 0 0 100%;
+    height: 720px;
 }
 </style>
