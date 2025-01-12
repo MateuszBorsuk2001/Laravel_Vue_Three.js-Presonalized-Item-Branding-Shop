@@ -6,7 +6,7 @@
                 class="carousel-inner" 
             >
             <div v-if="carousel.currentIndex === 0" class="carousel-item p-8 text-center ">
-                <Slide1 @update-model="asignModel" @generated-image="asignImage" />
+                <Slide1 @update-model="asignModel" @generated-image="asignImage" @update-description="assignDescription" />
               </div>
               <!-- Slide 2 - 3D model customization -->
               <div v-if="carousel.currentIndex === 1" class="carousel-item p-8 text-center">
@@ -16,7 +16,7 @@
               <!-- Slide 3 - Payment -->
               <div v-if="carousel.currentIndex === 2" class="carousel-item p-8 text-center">
                 <Slide3 :modelScreenshot="modelScreenshot" />
-      
+      000
               </div>
             </div>
             <!-- Navigation arrows -->
@@ -79,12 +79,27 @@ import axios from 'axios';
 
 const modelName = ref('');
 const selectedModel = ref('');
+const description = ref('');
 let generatedImage = ref('');
 let savedModel = ref('');
 let modelScreenshot = ref('');
 const showWarningModal = ref(false);
-const handleScreenshot = (screenshot) => {
+const handleScreenshot = async (screenshot) => {
+    try {
+        await axios.put('/api/screenshots', {
+            screenshot: screenshot,
+            name: modelName.value
+        },{
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            withCredentials: true
+        });
     modelScreenshot.value = screenshot;
+    }catch (error) {
+        console.error('Error saving screenshot:', error);
+    }
 }
 const handleSaveModel = async (modelData) => {
     try {
@@ -93,24 +108,20 @@ const handleSaveModel = async (modelData) => {
         const processedData = {
             name: modelName.value,
             model: selectedModel.value,
-            logos: modelData.logos.map(logo => ({
-                texture: logo.texture,
-                position: logo.position,
-                size: logo.size,
-                rotation: logo.rotation
-            }))
+            logos: modelData.logos,
+            description: description.value
         };
+        console.log(processedData.logos);
 
-        // Use POST for both create and update
-        const response = await axios.post('http://localhost:8000/api/items', processedData, {
+        const response = await axios.post('/api/items', processedData, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
             withCredentials: true
         });
-        
-        console.log('Model saved successfully:', response.data);
+
+        console.log('Model saved successfully');
         savedModel.value = response.data;
         
     } catch (error) {
@@ -126,6 +137,10 @@ function asignModel(model) {
 function asignImage(image) {
     generatedImage = image;
 };
+
+function assignDescription(text) {
+    description.value = text;
+}
 // Carousel state
 const carousel = reactive({
     slides: [

@@ -5,57 +5,67 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ItemController extends Controller
 {
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'string',
-            'model' => 'string',
-            'logos' => 'array',
-            'logos.*.texture' => 'string',
-            'logos.*.position.x' => 'numeric',
-            'logos.*.position.y' => 'numeric',
-            'logos.*.size.width' => 'numeric',
-            'logos.*.size.height' => 'numeric',
-            'logos.*.rotation' => 'numeric'
+            'name' => 'required|string',
+            'model' => 'required|string',
+            'logos' => 'required|array',
+            'description' => 'nullable|string',
         ]);
-        
-        if (!Auth::check()) {
-            return response()->json(['message' => 'User must be authenticated'], 401);
-        }
     
-        // First try to find existing item
+        $userId = Auth::id();
+        $userFolder = "users/{$userId}/logos";
         $item = Item::where('name', $validated['name'])->first();
     
+        // If item exists, get existing logos to reuse filenames
+        $existingLogos = $item ? json_decode($item->logos, true) : [];
+        
+        // Process each logo
+        $processedLogos = array_map(function($logo, $index) use ($userFolder, $existingLogos) {
+            $base64Image = $logo['texture'];
+            
+            // Reuse existing filename if available, otherwise create new one
+            $filename = isset($existingLogos[$index]) 
+                ? basename($existingLogos[$index]['texture'])
+                : Str::random(40) . '.jpg';
+                
+            $path = "{$userFolder}/{$filename}";
+            $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image));
+            Storage::disk('public')->put($path, $imageData);
+    
+            return [
+                'texture' => "/storage/{$path}",
+                'position' => $logo['position'],
+                'size' => $logo['size'],
+                'rotation' => $logo['rotation']
+            ];
+        }, $validated['logos'], array_keys($validated['logos']));
+    
         if ($item) {
-            // Update existing item
             $item->update([
                 'model' => $validated['model'],
-                'logos' => json_encode($validated['logos']),
-                'user_id' => Auth::id()
+                'logos' => json_encode($processedLogos),
+                'user_id' => $userId,
+                'description' => $validated['description'],
             ]);
         } else {
-            // Create new item
             $item = Item::create([
                 'name' => $validated['name'],
                 'model' => $validated['model'],
-                'logos' => json_encode($validated['logos']),
-                'user_id' => Auth::id()
+                'logos' => json_encode($processedLogos),
+                'user_id' => $userId,
+                'description' => $validated['description'],
             ]);
         }
     
         return response()->json($item);
     }
-
-    public function show($id)
-    {
-        $item = Item::findOrFail($id);
-        $item->logos = json_decode($item->logos);
-        return response()->json($item);
-    }
-
     public function getLatest()
 {
     $item = Item::latest()->first();

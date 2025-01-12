@@ -14,7 +14,9 @@ class Item extends Model
         'name',
         'model',
         'logos',
-        'user_id'
+        'user_id',
+        'description',
+        'screenshot_path',
     ];
 
     protected $casts = [

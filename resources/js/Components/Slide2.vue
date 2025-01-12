@@ -55,7 +55,7 @@ onMounted(() => {
   // Load HDR environment map
   const rgbeLoader = new RGBELoader();
   rgbeLoader.load(
-    'https://3d-cloth.tarunthummar.com/wp-content/uploads/2024/07/symmetrical_garden_02_2k.hdr',
+   '/storage/images/symmetrical_garden_02_2k.hdr',
     (texture) => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       scene.environment = texture;
@@ -116,8 +116,29 @@ onMounted(() => {
   );
 
   function captureScreenshot() {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 512;
+    tempCanvas.height = 512;
+    const tempContext = tempCanvas.getContext('2d');
+    
     renderer.render(scene, camera);
-    const screenshot = renderer.domElement.toDataURL('image/png');
+    
+    const originalWidth = renderer.domElement.width;
+    const originalHeight = renderer.domElement.height;
+    // Increase scale factor for larger model
+    const scale = Math.min(512 / originalWidth, 512 / originalHeight) * 4;
+    
+    const scaledWidth = originalWidth * scale;
+    const scaledHeight = originalHeight * scale;
+    const x = (512 - scaledWidth) / 2;
+    const y = (512 - scaledHeight) / 2;
+    
+    tempContext.fillStyle = 'white';
+    tempContext.fillRect(0, 0, 512, 512);
+    
+    tempContext.drawImage(renderer.domElement, x, y, scaledWidth, scaledHeight);
+    
+    const screenshot = tempCanvas.toDataURL('image/png');
     emit('modelScreenshot', screenshot);
 }
 
@@ -619,23 +640,6 @@ onMounted(() => {
 
   window.addEventListener('resize', handleResize);
   
-
-
-function saveLogos(data) {
-    console.log(data)
-    axios.post('/api/items', data, {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}` // Include the auth token (if using API authentication)
-        }
-    })
-    .then(response => {
-        console.log('Model data saved successfully:', response.data);
-    })
-    .catch(error => {
-        console.error('Error saving model data:', error);
-    });
-}
 });
 
 

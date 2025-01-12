@@ -60,7 +60,7 @@ const generatedImage = ref(null);
 const isWarningModalVisible = ref(false);
 const isLoading = ref(false);
   
-const emit = defineEmits(['update-model','generated-image']);
+const emit = defineEmits(['update-model','generated-image','update-description']);
   
 const emitSelectedModel = () => {
     emit('update-model', selectedModel.value);
@@ -68,42 +68,47 @@ const emitSelectedModel = () => {
 const emitGeneratedImage = () => {
     emit('generated-image',generatedImage.value);
 };
-  
+
 const generateImage = async () => {
+  if (!description.value.trim()) {
+      alert('Proszę wpisać opis obrazu');
+      return;
+  }
 
-    isLoading.value = true;
-    generatedImage.value = null;
+  isLoading.value = true;
+  generatedImage.value = null;
 
-    try {
+  try {
       const response = await fetch('http://127.0.0.1:7860/sdapi/v1/txt2img', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: description.value,
-          negative_prompt: "low quality, blurry",
-          steps: 30,
-          cfg_scale: 7.5,
-          width: 512,
-          height: 512,
-          sampler_name: "Euler a",
-        }),
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              prompt: description.value,
+              negative_prompt: "low quality, blurry",
+              steps: 30,
+              cfg_scale: 7.5,
+              width: 512,
+              height: 512,
+              sampler_name: "Euler a",
+          }),
       });
 
       if (!response.ok) {
-        throw new Error('Nie udało się wygenerować obrazu');
+          throw new Error('Nie udało się wygenerować obrazu');
       }
 
       const data = await response.json();
       generatedImage.value = `data:image/png;base64,${data.images[0]}`;
       emit('generated-image', generatedImage.value);
-    } catch (error) {
+      emit('update-description', description.value);
+  } catch (error) {
       console.error(error);
       alert('Wystąpił błąd podczas generowania obrazu.');
-    } finally {
+  } finally {
       isLoading.value = false;
-    }
+  }
 };
 
 </script>
