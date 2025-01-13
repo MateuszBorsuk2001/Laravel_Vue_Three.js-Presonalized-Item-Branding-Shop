@@ -18,35 +18,42 @@ class ItemController extends Controller
             'logos' => 'required|array',
             'description' => 'nullable|string',
         ]);
-    
+
         $userId = Auth::id();
         $userFolder = "users/{$userId}/logos";
         $item = Item::where('name', $validated['name'])->first();
-    
-        // If item exists, get existing logos to reuse filenames
+
         $existingLogos = $item ? json_decode($item->logos, true) : [];
         
-        // Process each logo
         $processedLogos = array_map(function($logo, $index) use ($userFolder, $existingLogos) {
-            $base64Image = $logo['texture'];
+            if (!isset($logo['texture'])) {
+                return null;
+            }
             
-            // Reuse existing filename if available, otherwise create new one
-            $filename = isset($existingLogos[$index]) 
-                ? basename($existingLogos[$index]['texture'])
-                : Str::random(40) . '.jpg';
+            $texture = stripslashes($logo['texture']);
+            
+            if (preg_match('#^data:image/\w+;base64,#i', $texture)) {
+                $filename = isset($existingLogos[$index]) 
+                    ? basename($existingLogos[$index]['texture'])
+                    : Str::random(40) . '.jpg';
+                    
+                $path = "{$userFolder}/{$filename}";
+                $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $texture));
+                Storage::disk('public')->put($path, $imageData);
                 
-            $path = "{$userFolder}/{$filename}";
-            $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image));
-            Storage::disk('public')->put($path, $imageData);
-    
+                $texture = "/storage/{$path}";
+            }
+
             return [
-                'texture' => "/storage/{$path}",
+                'texture' => $texture,
                 'position' => $logo['position'],
                 'size' => $logo['size'],
                 'rotation' => $logo['rotation']
             ];
         }, $validated['logos'], array_keys($validated['logos']));
-    
+
+        $processedLogos = array_filter($processedLogos);
+
         if ($item) {
             $item->update([
                 'model' => $validated['model'],
@@ -63,7 +70,7 @@ class ItemController extends Controller
                 'description' => $validated['description'],
             ]);
         }
-    
+
         return response()->json($item);
     }
     public function getLatest()

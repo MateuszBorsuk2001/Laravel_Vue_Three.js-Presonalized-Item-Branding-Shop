@@ -19,16 +19,17 @@ const props = defineProps({
         required: true
     }
 });
+let model3D = ref('');
 const modelData = reactive ({
     name: `${props.item.name}`, // Name of the design/model
     url:  `/storage/models/${props.item.model}/scene.glb`, // This can be your model data, like a base64-encoded string or a URL to a .glb or .obj file
-    logos: [props.item.logos], // Logos or textures attached to the model, which could be either URL or base64
+    logos: [], // Logos or textures attached to the model, which could be either URL or base64
 });
 onMounted(() => {
   const canvas = canvasRef.value;
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
-
+  model3D = props.item.model;
   // Create a Three.js scene
   const scene = new THREE.Scene();
 
@@ -131,7 +132,15 @@ onMounted(() => {
         console.error('Error saving screenshot:', error);
     }
 };
+const lastScreenshotTime = ref(0);
   function captureScreenshot() {
+    const currentTime = Date.now();
+    if (currentTime - lastScreenshotTime.value < 1000) {
+        return; 
+    }
+    
+    lastScreenshotTime.value = currentTime;
+
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = 512;
     tempCanvas.height = 512;
@@ -632,14 +641,28 @@ if (savedLogos && savedLogos.length > 0 && i === 0) {
 const saveModel = async (modelData) => {
     try {
         await axios.get('/sanctum/csrf-cookie');
+        
+        // Create a copy of existing logos
+        let allLogos = [...modelData.logos];
+        
+        // Ensure existing logos from props are preserved
+        if (props.item.logos && Array.isArray(JSON.parse(props.item.logos))) {
+            const existingLogos = JSON.parse(props.item.logos);
+            // Merge existing logos with modified ones, avoiding duplicates
+            existingLogos.forEach((existingLogo, index) => {
+                if (!allLogos[index]) {
+                    allLogos[index] = existingLogo;
+                }
+            });
+        }
+
         const processedData = {
             name: props.item.name,
-            model: props.item.model,
-            logos: modelData.logos,
+            model: model3D,
+            logos: allLogos,
             description: props.item.description
         };
 
-        // Use PUT method for updating existing item
         const response = await axios.post('/api/items', processedData, {
             headers: {
                 'Content-Type': 'application/json',
@@ -648,7 +671,6 @@ const saveModel = async (modelData) => {
             withCredentials: true
         });
 
-        // console.log('Model updated successfully');
         savedModel.value = response.data;
         
     } catch (error) {

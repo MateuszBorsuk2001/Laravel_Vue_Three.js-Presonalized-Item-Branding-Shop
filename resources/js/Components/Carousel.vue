@@ -16,7 +16,6 @@
               <!-- Slide 3 - Payment -->
               <div v-if="carousel.currentIndex === 2" class="carousel-item p-8 text-center">
                 <Slide3 :modelScreenshot="modelScreenshot" />
-      000
               </div>
             </div>
             <!-- Navigation arrows -->
@@ -111,7 +110,6 @@ const handleSaveModel = async (modelData) => {
             logos: modelData.logos,
             description: description.value
         };
-        console.log(processedData.logos);
 
         const response = await axios.post('/api/items', processedData, {
             headers: {

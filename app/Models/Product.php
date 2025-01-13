@@ -31,7 +31,7 @@ class Product extends Model
     {
         return $this->belongsTo(Image::class, 'image_id');
     }
-
+    
     public function images()
     {
         return $this->morphMany(Image::class, 'imageable');
