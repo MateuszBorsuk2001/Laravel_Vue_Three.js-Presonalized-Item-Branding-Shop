@@ -8,7 +8,7 @@
 
         <div class="actions-section mb-8">
             <div class="actions-container">
-                <button @click="addToBasket" class="basket-btn">
+                <button @click="addToBasket" class="basket-btn"  :class="{ 'animate-fill': isAnimating }">
                     Dodaj do koszyka
                 </button>
 
@@ -17,85 +17,71 @@
                 </button>
             </div>
         </div>
-
-        <!-- Purchase Modal -->
-        <div v-if="isModalVisible" class="modal-overlay" @click.self="togglePurchaseModal">
-            <div class="modal-content">
-                <form @submit.prevent="handlePurchase" class="grid gap-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-xl font-bold">Formularz zakupu</h4>
-                        <button type="button" @click="togglePurchaseModal" class="close-btn">×</button>
-                    </div>
-                    <input type="text" v-model="purchaseForm.name" placeholder="Imię i nazwisko" required>
-                    <input type="email" v-model="purchaseForm.email" placeholder="Email" required>
-                    <input type="tel" v-model="purchaseForm.phone" placeholder="Telefon">
-                    <input type="text" v-model="purchaseForm.address" placeholder="Adres dostawy" required>
-                    <button type="submit" class="proceed-btn">Przejdź do płatności</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Basket Confirmation Modal -->
-        <div v-if="isBasketModalVisible" class="modal-overlay" @click.self="toggleBasketModal">
-            <div class="modal-content text-center">
-                <div class="flex flex-col items-center gap-4">
-                    <svg class="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <h4 class="text-xl font-bold">Dodano do koszyka!</h4>
-                    <div class="flex gap-4 mt-4">
-                        <button @click="toggleBasketModal" class="secondary-btn">Kontynuuj zakupy</button>
-                        <button @click="goToBasket" class="primary-btn">Przejdź do koszyka</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
+import { emitter } from '@/eventBus';
+
+const isAnimating = ref(false);
 
 const props = defineProps({
     modelScreenshot: {
         type: String,
         default: '' 
+    },
+    itemId: {
+        type: Number,
+        required: true
+    },
+    modelName: {
+        type: String,
+        required: true
+    },
+});
+
+const addToBasket = async () => {
+    isAnimating.value = true;
+    
+    try {
+        const response = await axios.post('/api/basket', {
+            itemId: props.itemId,
+            name: props.modelName,
+            quantity: 1
+        });
+        emitter.emit('basketUpdated');
+        setTimeout(() => {
+            isAnimating.value = false;
+        }, 200);
+    }catch (error) {
+        console.error('Error adding to basket:', error);
+        isAnimating.value = false;
     }
-});
-
-const isModalVisible = ref(false);
-const isBasketModalVisible = ref(false);
-const purchaseForm = ref({
-    name: '',
-    email: '',
-    phone: '',
-    address: ''
-});
-
-const togglePurchaseModal = () => {
-    isModalVisible.value = !isModalVisible.value;
 };
 
-const toggleBasketModal = () => {
-    isBasketModalVisible.value = !isBasketModalVisible.value;
-};
-
-const addToBasket = () => {
-    toggleBasketModal();
-};
-
-const goToBasket = () => {
-    // Add basket navigation logic here
-    toggleBasketModal();
-};
-
-const handlePurchase = () => {
-    console.log('Form data:', purchaseForm.value);
-    togglePurchaseModal();
-};
 </script>
 
 <style scoped>
+.animate-fill {
+    animation: fillButton 0.5s ease forwards;
+}
+
+@keyframes fillButton {
+    0% {
+        background-color: #ffffff;
+        color: rgb(99 102 241);
+    }
+    50% {
+        background-color: rgb(99 102 241);
+        color: white;
+    }
+    100% {
+        background-color: #ffffff;
+        color: rgb(99 102 241);
+    }
+}
 .summary-container {
     padding: 20px;
     max-width: 800px;
@@ -148,29 +134,6 @@ input {
     background-color: rgb(99 102 241);
     color: white;
     width: 100%;
-}
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
 }
 
 .close-btn {

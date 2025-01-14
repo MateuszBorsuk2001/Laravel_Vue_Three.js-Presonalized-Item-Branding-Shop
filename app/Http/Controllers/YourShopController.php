@@ -21,7 +21,8 @@ class YourShopController extends Controller
                 'id' => $item->id,
                 'model' => $modelTranslations[$item->model] ?? $item->model,
                 'description' => $item->description,
-                'screenshot_path' => asset($item->screenshot_path)
+                'screenshot_path' => asset($item->screenshot_path),
+                'name' => $item->name,
             ];
         });
 

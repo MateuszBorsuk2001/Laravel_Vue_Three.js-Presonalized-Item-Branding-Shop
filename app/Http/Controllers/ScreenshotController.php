@@ -6,6 +6,7 @@ use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ScreenshotController extends Controller
@@ -16,6 +17,7 @@ class ScreenshotController extends Controller
             'screenshot' => 'required|string',
             'name' => 'required|string'
         ]);
+        Log::info('Searching for item with name: ' . $validated['name']);
 
         $userId = Auth::id();
         $userFolder = "users/{$userId}/screenshots";

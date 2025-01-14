@@ -1,14 +1,30 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
+import Basket from '@/Components/Basket.vue';
 import NavLink from '@/Components/NavLink.vue';
 import NavImage from '@/Components/NavImage.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
+import { emitter } from '@/eventBus';
 
+const isAnimating = ref(false);
 const showingNavigationDropdown = ref(false);
+
+onMounted(() => {
+    emitter.on('basketUpdated', () => {
+        isAnimating.value = true;
+        setTimeout(() => {
+            isAnimating.value = false;
+        }, 500);
+    });
+});
+
+onUnmounted(() => {
+    emitter.off('basketUpdated');
+});
 </script>
 
 <template >
@@ -43,6 +59,33 @@ const showingNavigationDropdown = ref(false);
 
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
                             <!-- Settings Dropdown -->
+                            <div class="ms-3 relative">
+                                <Dropdown align="right" width="48">
+                                    <template #trigger>
+                                        <span class="inline-flex rounded-md">
+                                            <button
+                                                type="button"
+                                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
+                                            >
+                                            <svg 
+                                                xmlns="http://www.w3.org/2000/svg" 
+                                                class="h-6 w-6" 
+                                                :class="{ 'basket-animate': isAnimating }"
+                                                fill="none" 
+                                                viewBox="0 0 24 24" 
+                                                stroke="currentColor"
+                                                >
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            </button>
+                                        </span>
+                                    </template>
+
+                                    <template #content>
+                                    <Basket/>
+                                    </template>
+                                </Dropdown>
+                            </div>
                             <div class="ms-3 relative">
                                 <Dropdown align="right" width="48">
                                     <template #trigger>
@@ -159,5 +202,15 @@ const showingNavigationDropdown = ref(false);
 <style scoped>
 .bg-c{
     background-color: rgb(238, 238, 238);
+}
+
+@keyframes basketPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+.basket-animate {
+    animation: basketPulse 0.5s ease;
 }
 </style>

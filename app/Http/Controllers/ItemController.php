@@ -81,5 +81,11 @@ class ItemController extends Controller
     }
     return response()->json($item);
 }
-
+public function destroy($name)
+{
+    $item = Item::where('name', $name)->firstOrFail();
+    $item->delete();
+    
+    return response()->json(null, 204);
+}
 }

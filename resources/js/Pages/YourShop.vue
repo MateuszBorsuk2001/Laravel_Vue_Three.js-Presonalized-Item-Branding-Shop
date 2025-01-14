@@ -2,6 +2,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import ProductCard from '@/Components/ProductCard.vue';
+import { onMounted, ref, onUnmounted } from 'vue';
+import { emitter } from '@/eventBus';
 
 const props = defineProps({
     items: {
@@ -9,9 +11,25 @@ const props = defineProps({
         required: true,
     }
 });
+
+let items = ref(props.items);
+
+// Handle item removal directly in the parent component
+const handleItemRemoval = (removedItemName) => {
+    items.value = items.value.filter(item => item.name !== removedItemName);
+};
+
+onMounted(() => {
+    emitter.on('designRemoved', handleItemRemoval);
+});
+
+onUnmounted(() => {
+    emitter.off('designRemoved', handleItemRemoval);
+});
 </script>
-  <template>
-      <Head title="YourShop" />
+
+<template>
+    <Head title="YourShop" />
 
       <AuthenticatedLayout>
           <template #header>
@@ -27,11 +45,12 @@ const props = defineProps({
                                   :image="item.screenshot_path"
                                   :name="item.model"
                                   :description="item.description"
+                                  :recordName="item.name"
                               />
                           </div>
                       </div>
                   </div>
-                  <div v-else class="text-center py-12">
+                  <div v-if="items.length == 0" class="text-center py-12">
                       <p class="text-gray-600 text-lg">
                           Tutaj będą wyświetlane Twoje przyszłe projekty.
                       </p>

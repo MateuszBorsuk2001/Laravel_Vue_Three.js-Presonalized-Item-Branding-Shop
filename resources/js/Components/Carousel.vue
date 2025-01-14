@@ -15,7 +15,7 @@
    
               <!-- Slide 3 - Payment -->
               <div v-if="carousel.currentIndex === 2" class="carousel-item p-8 text-center">
-                <Slide3 :modelScreenshot="modelScreenshot" />
+                <Slide3 :modelScreenshot="modelScreenshot" :modelName="modelName" />
               </div>
             </div>
             <!-- Navigation arrows -->
@@ -76,7 +76,7 @@ import Slide2 from '@/Components/Slide2.vue';
 import Slide3 from '@/Components/Slide3.vue';
 import axios from 'axios';
 
-const modelName = ref('');
+let modelName = ref('');
 const selectedModel = ref('');
 const description = ref('');
 let generatedImage = ref('');
@@ -85,6 +85,16 @@ let modelScreenshot = ref('');
 const showWarningModal = ref(false);
 const handleScreenshot = async (screenshot) => {
     try {
+        if (!savedModel.value) {
+            await new Promise(resolve => {
+                const checkModel = setInterval(() => {
+                    if (savedModel.value) {
+                        clearInterval(checkModel);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
         modelScreenshot.value = screenshot;
         await axios.put('/api/screenshots', {
             screenshot: screenshot,
