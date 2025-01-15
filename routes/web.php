@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\EditorController;
+use App\Http\Controllers\FinalizationController;
 use App\Http\Controllers\YourShopController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\OrderController;
+use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -46,6 +49,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         });
     }
+    Route::post('/orders', [OrderController::class, 'store'])->middleware(['auth'])->name('orders.store');
+    Route::get('/finalization', [FinalizationController::class, 'index'])->name('finalization');
+    Route::get('/order/confirmation/{order}/download', [OrderController::class, 'downloadConfirmation'])
+    ->name('order-confirmation-download');
 });
 
 require __DIR__.'/auth.php';

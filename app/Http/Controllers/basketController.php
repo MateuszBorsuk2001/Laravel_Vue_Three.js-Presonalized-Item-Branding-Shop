@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Basket;
 use App\Models\Item;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class BasketController extends Controller
 {
@@ -55,5 +56,17 @@ class BasketController extends Controller
         $basketItem->delete();
 
         return response()->json(null, 204);
+    }
+    
+    public function clear()
+    {
+        $userId = Auth::id();
+        Log::info('Clearing basket for user ID: ' . $userId);
+    
+        $deleted = Basket::where('user_id', $userId)->delete();
+    
+        Log::info('Number of items deleted: ' . $deleted);
+    
+        return response()->json(['message' => 'Basket cleared successfully']);
     }
 }

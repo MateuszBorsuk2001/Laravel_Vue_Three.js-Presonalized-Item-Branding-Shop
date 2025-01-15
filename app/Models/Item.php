@@ -17,6 +17,7 @@ class Item extends Model
         'user_id',
         'description',
         'screenshot_path',
+        'unit_price'
     ];
 
     protected $casts = [

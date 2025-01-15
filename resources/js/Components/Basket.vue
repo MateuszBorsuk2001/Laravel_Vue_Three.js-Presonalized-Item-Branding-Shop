@@ -17,9 +17,14 @@
                 </svg>
             </button>
         </div>
-        <div class="mt-4 text-right">
-            <span class="font-bold">Total Items: {{ totalItems }}</span>
-        </div>
+        <div class="sticky bottom-0 left-0 right-0 p-4 bg-white border-t">
+            <button 
+                @click="goToFinalization" 
+                class="w-full block bg-indigo-500 text-white px-6 py-2 rounded hover:bg-indigo-600 transition-colors text-center"
+            >
+                Kup teraz
+            </button>
+</div>
     </div>
     <div v-else class="p-4 text-center text-gray-600">
        Twój koszyk jest pusty.
@@ -29,9 +34,17 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { emitter } from '@/eventBus'
+import { router } from '@inertiajs/vue3'
 
 const isOpen = ref(false) 
 let basketItems = ref([])
+
+const goToFinalization = () => {
+    router.visit('/finalization', {
+        preserveScroll: true,
+        preserveState: true
+    })
+}
 
 onMounted(() => {
     fetchBasketItems()
@@ -53,7 +66,6 @@ const fetchBasketItems = async () => {
     try {
         const response = await axios.get('/api/basket')
         basketItems.value = response.data
-        console.log('Basket updated:', basketItems.screenshot_path) // Add this to debug
     } catch (error) {
         console.error('Error fetching basket items:', error)
     }

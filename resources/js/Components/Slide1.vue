@@ -11,7 +11,7 @@
                 <option value="" disabled selected>Wybierz model 3D z listy</option>
                 <option value="mug">Kubek</option>
                 <option value="tshirt">T-shirt</option>
-                <option value="cap">Czapka z daszkiem</option>
+                <!-- <option value="cap">Czapka z daszkiem</option> -->
             </select>
         </div>
   

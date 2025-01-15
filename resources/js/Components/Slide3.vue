@@ -12,7 +12,7 @@
                     Dodaj do koszyka
                 </button>
 
-                <button @click="togglePurchaseModal" class="buy-now-btn">
+                <button @click="goToFinalization" class="buy-now-btn">
                     Kup teraz
                 </button>
             </div>
@@ -24,6 +24,8 @@
 import { ref } from 'vue';
 import axios from 'axios';
 import { emitter } from '@/eventBus';
+import { router } from '@inertiajs/vue3'
+
 
 const isAnimating = ref(false);
 
@@ -60,7 +62,13 @@ const addToBasket = async () => {
         isAnimating.value = false;
     }
 };
-
+const goToFinalization = () => {
+    addToBasket();
+    router.visit('/finalization', {
+        preserveScroll: true,
+        preserveState: true
+    })
+}
 </script>
 
 <style scoped>
