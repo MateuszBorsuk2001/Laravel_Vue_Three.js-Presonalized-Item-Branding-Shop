@@ -229,9 +229,9 @@ onMounted(() => {
             -activeLogo.size.height / 2 - iconSize, // y
             iconSize, iconSize);
             // Draw the delete icon at the top-left corner of the active logo
-            context.drawImage(deleteIcon, activeLogo.size.width / 2, // x
-            activeLogo.size.height / 2, // y
-            iconSize, iconSize);
+            // context.drawImage(deleteIcon, activeLogo.size.width / 2, // x
+            // activeLogo.size.height / 2, // y
+            // iconSize, iconSize);
             // Restore canvas state
             context.restore();
         }
