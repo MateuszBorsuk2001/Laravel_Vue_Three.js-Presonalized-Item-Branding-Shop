@@ -33,7 +33,7 @@
         <thead>
             <tr>
                 <th>Produkt</th>
-                <th>Ilość</th>
+                <th>Liczba sztuk</th>
                 <th>Cena za sztukę</th>
                 <th>Suma</th>
             </tr>

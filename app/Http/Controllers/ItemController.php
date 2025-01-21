@@ -73,6 +73,7 @@ class ItemController extends Controller
 
         return response()->json($item);
     }
+    
     public function getLatest()
 {
     $item = Item::latest()->first();

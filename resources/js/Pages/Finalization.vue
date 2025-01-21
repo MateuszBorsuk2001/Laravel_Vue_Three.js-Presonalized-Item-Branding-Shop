@@ -11,7 +11,7 @@
                         <img :src="item.item.screenshot_path" class="w-20 h-20 object-cover mr-4">
                         <div class="flex-grow">
                             <h3 class="font-medium">{{ item.model }}</h3>
-                            <p>Ilość sztuk: {{ item.quantity }}</p>
+                            <p>Liczba sztuk: {{ item.quantity }}</p>
                             <p>Cena za sztukę: {{ item.item.unit_price }} €$</p>
                             <p>Razem: {{ calcuateTotalPerItem(item) }} €$</p>
                         </div>
@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="mt-4 text-xl font-bold">
-                    Total Price: {{ calculateTotal() }} €$
+                    Cena całkowita: {{ calculateTotal() }} €$
                 </div>
             </div>
 

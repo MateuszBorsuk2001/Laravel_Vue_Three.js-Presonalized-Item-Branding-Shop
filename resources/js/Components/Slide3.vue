@@ -63,7 +63,6 @@ const addToBasket = async () => {
     }
 };
 const goToFinalization = () => {
-    addToBasket();
     router.visit('/finalization', {
         preserveScroll: true,
         preserveState: true
